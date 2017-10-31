@@ -1,7 +1,8 @@
 #coding: utf-8
 from selenium import webdriver
-import time
-class Dirlididi(object):
+import time,os,urllib
+
+class DirlididiPage(object):
 	def __init__(self,driver):
 		self.driver = driver
 		self.submission = None
@@ -34,6 +35,27 @@ class Dirlididi(object):
 	
 	def filter_data(self,submission_list,result,matrix_index):
 		return [x for x in submission_list if x[matrix_index] == result ]
+	
+	def _process_date(self,date,begin,end):
+		date_hours = int(date[0:2])
+		date_mins = int(date[3:5])
+		begin_hours = int(begin[0:2])
+		begin_mins = int(begin[3:5])
+		end_hours = int(end[0:2])
+		end_mins = int(end[3:5])
+		if(date_hours >= begin_hours and date_hours <= end_hours):
+			if(date_mins >= begin_mins and date_mins <= end_mins):
+				return True
+			else:
+				return False
+		else:
+			return False
+
+	def filter_by_time(self,submission_list,date,begin,end):
+		print submission_list[0][0][0:10]
+		print submission_list[0][0][11:16]
+		submission_day_list = [ x for x in submission_list if x[0][0:10] == date ]
+		return [ x for x in submission_day_list if self._process_date(x[0][11:16],begin,end) ]
 
 	def count_attrib(self,submission_list,right_index, left_index, element_index ):
 		submission_set = set( tuple(x[right_index:left_index]) for x in submission_list )
@@ -49,21 +71,46 @@ class Dirlididi(object):
 	def finish(self):
 		self.driver.quit()
 
-	
 ff = webdriver.Firefox()
-dirlididi = Dirlididi(ff)
-dirlididi.navigate("http://dirlididi.com/client/index.html")
-raw_input("Faça seu login na pagina do dirlididi (caso ja tenha feita apenas aperte enter) ...")
-dirlididi.navigate("http://dirlididi.com/client/index.html#/courses")
-time.sleep(5)
-dirlididi.generate_log()
-time.sleep(10)
-only_true_list =  dirlididi.filter_data(dirlididi.get_submission_data(),u'true',4)
-quest_list = dirlididi.filter_data(only_true_list,"OwJdqYJF2",2) + dirlididi.filter_data(only_true_list,"LsEjqKerA",2) + dirlididi.filter_data(only_true_list,"U61k02zZY",2)
+dirlididi = DirlididiPage(ff)
 
-people_dict = dirlididi.count_attrib(quest_list,1,3,0)
-submission_file = open("submission_file.txt",'w')
-for key, value in people_dict.iteritems():
-    submission_file.write(str(key) + " " +  str(value) )
+def dirlididi_init():
+	dirlididi.navigate("http://dirlididi.com/client/index.html")
+	raw_input("Faça seu login na pagina do dirlididi (caso ja tenha feito apenas aperte enter) ...")
 
-dirlididi.finish()
+def get_users_results(questions):
+	dirlididi.navigate("http://dirlididi.com/client/index.html#/courses")
+	time.sleep(3)
+	dirlididi.generate_log()
+	time.sleep(10)
+	only_true_list =  dirlididi.filter_data(dirlididi.get_submission_data(),u'true',4)
+	quest_list = []
+	for question in questions:
+		quest_list += dirlididi.filter_data(only_true_list,question,2)
+	people_dict = dirlididi.count_attrib(quest_list,1,3,0)
+	submission_file = open("submission_file.txt",'w')
+	for key, value in people_dict.iteritems():
+    		submission_file.write(str(key) + " " +  str(value)  + "\n")
+
+def download_users_code(questions):
+        dirlididi.navigate("http://dirlididi.com/client/index.html#/courses")
+        time.sleep(3)
+        dirlididi.generate_log()
+        time.sleep(10)
+        only_true_list =  dirlididi.filter_data(dirlididi.get_submission_data(),u'true',4)
+        quest_list = [] 
+	for question in questions:
+                question_list = dirlididi.filter_data(only_true_list,question,2)
+		if not os.path.exists(question):
+			os.makedirs(question)
+		for submission in question_list:
+			dir_path = "./" + question + "/"
+			try:
+				urllib.urlretrieve(submission[3], filename= (dir_path + submission[1]))
+			except:
+				continue
+
+if __name__ == "__main__":
+	dirlididi_init()
+	# Put Your code here!!
+	dirlididi.finish()
