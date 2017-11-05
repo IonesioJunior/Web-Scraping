@@ -32,3 +32,26 @@ def plotBars(tupla,x_subtitle,y_subtitle):
 	plt.ylim( max(y) * -0.15, max(y) + max(y) * 0.15)
 	plt.yticks(())	
 	plt.show()
+
+def plotDualBars(tupla,x_subtitle,y_subtitle):
+	n = len(tupla)
+	X = np.arange(n)
+	Y1 = [ x[1] for x in tupla ]#(1 - X / float(n)) * np.random.uniform(0.5, 1.0, n)
+	Y2 = [ -x[2] for x in tupla ]#(1 - X / float(n)) * np.random.uniform(0.5, 1.0, n)
+	plt.bar(X, Y1, facecolor='#90ee90', edgecolor='white')
+	plt.bar(X, Y2, facecolor='#ff9999', edgecolor='white')
+
+	for x, y in zip(X, Y1):
+	    plt.text(x + 0.4, y / 2, '%d' % y, ha='center', va= 'bottom')
+	    plt.text(x + 0.4, y, tupla[x][0], ha='center', va= 'bottom',fontsize=7)
+	for x, y in zip(X, Y2):
+	    plt.text(x + 0.4, y / 2, '%d' % (y * -1), ha='center', va= 'top')
+	
+        plt.text((-0.25 * n) - 0.25,len(y_subtitle)/ 2 + 0,y_subtitle,ha='center',va='baseline',fontsize=15,rotation='vertical')
+        plt.text(n / 2, min(Y2) + ( min(Y2)* 0.15),x_subtitle,ha='center',va='bottom',fontsize=15)
+
+	plt.xlim((-0.25 * n), n + (n* 0.25))
+	plt.xticks(())
+	plt.yticks(())
+	plt.ylim( min(Y2) - ( max(max(Y1), abs(min(Y2))) * 0.25 ),max(Y1) + (max(max(Y1),abs(min(Y2))) * 0.25)   )
+	plt.show()

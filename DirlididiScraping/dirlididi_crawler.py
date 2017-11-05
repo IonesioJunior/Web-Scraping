@@ -1,6 +1,7 @@
 #coding: utf-8
 from selenium import webdriver
 import time,os,urllib
+from plotBars import *
 
 class DirlididiPage(object):
 	def __init__(self,driver):
@@ -44,16 +45,17 @@ class DirlididiPage(object):
 		end_hours = int(end[0:2])
 		end_mins = int(end[3:5])
 		if(date_hours >= begin_hours and date_hours <= end_hours):
-			if(date_mins >= begin_mins and date_mins <= end_mins):
+			if(date_hours < end_hours and date_mins >= begin_mins):
 				return True
 			else:
-				return False
+				if(date_mins <= end_mins):
+					return True
+				else:
+					return False
 		else:
 			return False
 
 	def filter_by_time(self,submission_list,date,begin,end):
-		print submission_list[0][0][0:10]
-		print submission_list[0][0][11:16]
 		submission_day_list = [ x for x in submission_list if x[0][0:10] == date ]
 		return [ x for x in submission_day_list if self._process_date(x[0][11:16],begin,end) ]
 
@@ -78,12 +80,13 @@ def dirlididi_init():
 	dirlididi.navigate("http://dirlididi.com/client/index.html")
 	raw_input("Faça seu login na pagina do dirlididi (caso ja tenha feito apenas aperte enter) ...")
 
-def get_users_results(questions):
+def get_users_results(questions,date,begin,end):
 	dirlididi.navigate("http://dirlididi.com/client/index.html#/courses")
 	time.sleep(3)
 	dirlididi.generate_log()
 	time.sleep(10)
 	only_true_list =  dirlididi.filter_data(dirlididi.get_submission_data(),u'true',4)
+	only_true_list = dirlididi.filter_by_time(only_true_list,date,begin,end)
 	quest_list = []
 	for question in questions:
 		quest_list += dirlididi.filter_data(only_true_list,question,2)
@@ -109,8 +112,27 @@ def download_users_code(questions):
 				urllib.urlretrieve(submission[3], filename= (dir_path + submission[1]))
 			except:
 				continue
+def get_submission_chart(submission_list,date,hours):
+	bin_list = []
+	for i in range(len(hours)):
+		bin_list.append( (hours[i][0] +"-"+ hours[i][1],len(dirlididi.filter_by_time(submission_list,date,hours[i][0],hours[i][1]))))
+	plotBars(bin_list,"Horarios","Submissoes")
 
+def get_problems_chart(submission_list,problems_list):
+	bin_list = []
+	for i in range(len(problems_list)):
+		problem_list = dirlididi.filter_data(submission_list,problems_list[i],2)
+		true_freq = len(dirlididi.filter_data(problem_list,u'true',4))
+		false_freq = len(dirlididi.filter_data(problem_list,u'false',4))
+		bin_list.append( (problems_list[i],true_freq,false_freq) )
+	plotDualBars(bin_list,"Questions","Results")
+		
 if __name__ == "__main__":
 	dirlididi_init()
-	# Put Your code here!!
+        dirlididi.navigate("http://dirlididi.com/client/index.html#/courses")
+        time.sleep(3)
+        dirlididi.generate_log()
+        time.sleep(10)
+	submission_list = dirlididi.get_submission_data()
+	get_problems_chart(submission_list,["LsEjqKerA","OwJdqYJF2","U61k02zZY"])
 	dirlididi.finish()
